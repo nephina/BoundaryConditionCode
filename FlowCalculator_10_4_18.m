@@ -90,6 +90,7 @@ ylabel('Mass flowrate (kg/s)');
 legend([FolderNameList]);
 
 Method = menu('What method to use?','Outlets/Inlets Proportionized Based on Most Reliable Flow','Proportionally Assigned Difference','quit');
+close all;
 switch Method
     case 1
         %% Flow rate correction(Ali's Method): Normalize and proportion the outlet or inlet flowrates to match the opposite side(whichever one is more trusted)
