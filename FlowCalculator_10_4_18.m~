@@ -102,7 +102,6 @@ legend([FolderNameList]);
 
 Method = menu('What method to use?','Outlets/Inlets Proportionized Based on Most Reliable Flow','Proportionally Assigned Difference','quit');
 close all;
-flowside = 0;
 switch Method
     case 1
         %% Flow rate correction(Ali's Method): Normalize and proportion the outlet or inlet flowrates to match the opposite side(whichever one is more trusted)
@@ -153,6 +152,13 @@ switch Method
         end
 end
 
+%% Adding randomness for Moji's code (takes the ground truth to be the generated boundary conditions, and overlays a simulated 4DPCMR error)
+
+Randomness = menu('Add randomness to the boundary conditions?','yes','no');
+if Randomness == 1
+    BoundBCI = Randomizer(BoundariesFlowData);
+end
+
 %% Plotting
 figure;
 hold on;
@@ -162,14 +168,6 @@ end
 xlabel('Time(s)');
 ylabel('Mass flowrate (kg/s)');
 legend([FolderNameList]);
-title('Output Data')
-
-%% Adding randomness for Moji's code (takes the ground truth to be the generated boundary conditions, and overlays a simulated 4DPCMR error)
-
-Randomness = menu('Add randomness to the boundary conditions?','yes','no');
-if Randomness == 1
-    BoundBCI = Randomizer(BoundariesFlowData,Method,flowside,InletMask,OutletMask,NumImagesPerCardiacCycle,NumberofHeartCycles,NumberofBoundaries,x,y,FolderNameList,InOutSwitch);
-end
 
 %% Output
 
