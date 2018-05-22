@@ -2,7 +2,7 @@ function randomizedlist = Randomizer(BoundariesFlowData,Method,flowside,InletMas
 
 percenterror = input('What is the percent error to be applied to the sample data?: ');
 error = rand(size(BoundariesFlowData))-0.5;
-Simulated4DPCMRData = BoundariesFlowData + ((BoundariesFlowData).*error.*(percenterror/100))
+Simulated4DPCMRData = BoundariesFlowData + ((BoundariesFlowData).*error.*(percenterror/100));
 
 InletList= zeros(NumImagesPerCardiacCycle,NumberofBoundaries);
 OutletList=zeros(NumImagesPerCardiacCycle,NumberofBoundaries);

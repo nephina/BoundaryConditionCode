@@ -176,65 +176,29 @@ end
 app = menu('What are the boundary conditions for?','OpenFOAM','Ansys Fluent','No Output');
 switch app
     case 1
-        switch Method
-            case 1
-                for i = 1:NumberofBoundaries
+       for i = 1:NumberofBoundaries
                     
-                    fileID = fopen(BoundaryNameList{i},'w');
-                    fprintf(fileID, '(\n');
-                    for j=1:length(x)
-                        fprintf(fileID, '\t(%d %d) \n', x(j), BoundBCI(i,j));
-                    end
-                    fprintf(fileID, ');\n');
-                    fclose(fileID);
-                end
-            case 2
-                
-                for i = 1:NumberofBoundaries
-                    
-                    fileID = fopen(BoundaryNameList{i},'w');
-                    fprintf(fileID, '(\n');
-                    for j=1:length(x)
-                        fprintf(fileID, '\t(%d %d) \n', x(j), BoundBCI(i,j));
-                    end
-                    fprintf(fileID, ');\n');
-                    fclose(fileID);
-                end
-            case 3
+           fileID = fopen(BoundaryNameList{i},'w');
+           fprintf(fileID, '\t(\n');
+           for j=1:length(x)
+               fprintf(fileID, '\t(%d %d) \n', x(j), BoundBCI(i,j));
+           end
+           fprintf(fileID, '\t);\n');
+           fclose(fileID);
         end
     case 2
-        switch Method
-            case 1
-                for i = 1:NumberofBoundaries
-                    
-                    fileID = fopen(BoundaryNameList{i},'w');
-                    fprintf(fileID, ['(\n' BoundaryNameList{i} '\n (time \n'], length(x));
-                    for j=1:length(x)
-                        fprintf(fileID, '\t %d \n', x(j));
-                    end
-                    fprintf(fileID, ' )\n (flowRate \n');
-                    for j=1:length(x)
-                        fprintf(fileID, '\t %d \n', BoundBCI(j));
-                    end
-                    fprintf(fileID, ' )\n)\n');
-                    fclose(fileID);
-                end
-            case 2
-                for i = 1:NumberofBoundaries
-                    
-                    fileID = fopen(BoundaryNameList{i},'w');
-                    fprintf(fileID, ['(\n' BoundaryNameList{i} '\n (time \n'], length(x));
-                    for j=1:length(x)
-                        fprintf(fileID, '\t %d \n', x(j));
-                    end
-                    fprintf(fileID, ' )\n (flowRate \n');
-                    for j=1:length(x)
-                        fprintf(fileID, '\t %d \n', BoundBCI(j));
-                    end
-                    fprintf(fileID, ' )\n)\n');
-                    fclose(fileID);
-                end
-            case 3
+        for i = 1:NumberofBoundaries
+            fileID = fopen(BoundaryNameList{i},'w');
+            fprintf(fileID, ['(\n' BoundaryNameList{i} '\n (time \n'], length(x));
+            for j=1:length(x)
+                fprintf(fileID, '\t %d \n', x(j));
+            end
+            fprintf(fileID, ' )\n (flowRate \n');
+            for j=1:length(x)
+                fprintf(fileID, '\t %d \n', BoundBCI(j));
+            end
+            fprintf(fileID, ' )\n)\n');
+            fclose(fileID);
         end
     case 3
 end
