@@ -188,8 +188,9 @@ switch app
         end
     case 2
         for i = 1:NumberofBoundaries
-            fileID = fopen(BoundaryNameList{i},'w');
-            fprintf(fileID, ['(\n' BoundaryNameList{i} '\n (time \n'], length(x));
+            fileName = strcat(BoundaryNameList{i},'.txt');
+            fileID = fopen(fileName,'w');
+            fprintf(fileID, ['((\n' BoundaryNameList{i} 'transient %d 1' '\n (time \n'], length(x));
             for j=1:length(x)
                 fprintf(fileID, '\t %d \n', x(j));
             end
