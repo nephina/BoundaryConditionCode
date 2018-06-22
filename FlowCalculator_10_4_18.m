@@ -44,15 +44,25 @@ for j = 1:NumberofBoundaries
         planeName = sprintf('plane%d0.0.csv', i);
         loadBounds =  sprintf('%s/%s', FolderNameList{j}, planeName);
         Bounds = dlmread(loadBounds,",", 1, 0);
-        BoundaryRawData(:,i,j) = abs(Bounds(1:end,7)); % This is a 3D matrix set up as (boundaryflow, sampleplane#, boundary#)
+        % BoundaryRawData(:,i,j) = abs(Bounds(1:end,7)); % This is a 3D matrix set up as (boundaryflow, sampleplane#, boundary#)
+        BoundaryRawData(:,i,j) = Bounds(1:end,7); % No absolute value calculation, some boundaries might cross 0 flow
+    end
+end
+
+%% Make all boundary datasets majorly positive (avoids the error of abs() for boundaries that may cross 0 flow)
+
+for i = 1:NumberofBoundaries
+    if mean(mean(BoundaryRawData(:,:,i))) >= 0
+    else
+        BoundaryRawData(:,:,i) = -BoundaryRawData(:,:,i);
     end
 end
 
 %% Flow conversion to kg/s and averaging to find the mean flowrate
 
 for i = 1:NumberofBoundaries
-    BoundariesFlowData(:,i) = mean(BoundaryRawData(:,:,i),2).*1060* 1e-9; % 1060*1e-9 is the conversion to mass for one cubic millimeter of blood
-        % It then uses the mean function to combine the planes, so we have a 2D matrix of form (boundary, time)
+    ConvertedFlowData = BoundaryRawData.*1060.*1e-9; % 1060*1e-9 is the conversion to mass for one cubic millimeter of blood
+    BoundariesFlowData(:,i) = mean(ConvertedFlowData(:,:,i),2); % It then uses the mean function to combine the planes, so we have a 2D matrix of form (time, boundary)
 end
 
 %% Setup of outlets/inlets using user input
@@ -75,10 +85,8 @@ end
 
 sumOutlet = sum(OutletList,2);
 sumInlet = sum(InletList,2);
-OutletMask = OutletList;
-OutletMask(OutletMask > 0) = 1;
-InletMask = InletList;
-InletMask(InletMask > 0) = 1;
+InletMask = repmat(InOutSwitch',1,NumImagesPerCardiacCycle)';
+OutletMask = 1 - InletMask;
 
 global deltaT;
 global x;
@@ -89,17 +97,34 @@ y0 = 0:deltaT:((BeatsPerMin/60)-2*deltaT);
 y = 0:deltaT:((7*((60/BeatsPerMin)))-(1/BeatsPerMin));
 x = 0:TimeStepOfFinalData:y(end);
 
-%% Display the current boundary data and select a correction method
+%% Plot the raw data and the averaged data of each boundary in order to make an informed choice on whether the data is good
 
-figure;
-hold on;
+RawDataDisplayTable = cat(3,BoundariesFlowData,permute(ConvertedFlowData,[1,3,2]));
+plotbounds = [0 NumImagesPerCardiacCycle min(RawDataDisplayTable(:)) max(RawDataDisplayTable(:))]; % Scale each plot the same to get an accurate picture of how they compare
+numofsubplots = (ceil(NumberofBoundaries/3)*3)+3; % Automatically figures out how many subplots are needed in a 2*n form to display all the boundaries without wasting space
+subplotsydim = numofsubplots/3;
+
+
 for i = 1:NumberofBoundaries
-    plot(1:NumImagesPerCardiacCycle, BoundariesFlowData(:,i));
+    hold on
+    Color(i,:) = [((1/NumberofBoundaries)*i) (-((1/NumberofBoundaries)*i)+1) rand(1)]; % Trying to get a good differentiable spread of colors
+    subplot(subplotsydim,3,i);
+    for j = 1:NumberofPlanes
+        hold on;
+        plot(RawDataDisplayTable(:,i,(j+1)),'Color',Color(i,:),'Linewidth',1)
+        axis(plotbounds);
+        xlabel('Time(s)');
+        ylabel('Mass flowrate (kg/s)');
+    end
+    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',2)
+    title(BoundaryNameList(i));
+    subplot(subplotsydim,3,[numofsubplots-2 numofsubplots-1 numofsubplots]);
+    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1)
+    axis(plotbounds);
+    title('AveragedBoundaries')
+    xlabel('Time(s)');
+    ylabel('Mass flowrate (kg/s)');
 end
-xlabel('Time(s)');
-ylabel('Mass flowrate (kg/s)');
-legend([FolderNameList]);
-
 Method = menu('What method to use?','Outlets/Inlets Proportionized Based on Most Reliable Flow','Proportionally Assigned Difference','quit');
 close all;
 flowside = 0;
@@ -120,11 +145,11 @@ switch Method
         
         NormalizeConstants(NormalizeConstants == 0) = 1;
         BoundPercent(BoundPercent == 0) = 1;
-        BoundAdjusted = BoundariesFlowData.*NormalizeConstants;
+        FlowTable = BoundariesFlowData.*NormalizeConstants;
         
         %% Produce the final data for inlet/outlet comparison method
         
-        BoundBCO1 = repmat(BoundAdjusted',1,NumberofHeartCycles);
+        BoundBCO1 = repmat(FlowTable',1,NumberofHeartCycles);
         for i = 1:NumberofBoundaries
             BoundBCI(i,:) = interp1(y, BoundBCO1(i,:), x);
         end
@@ -154,15 +179,24 @@ switch Method
 end
 
 %% Plotting
-figure;
-hold on;
 for i = 1:NumberofBoundaries
-plot(x, BoundBCI(i,:));
+    subplot(1,2,1);
+    hold on;
+    plot(x, BoundBCI(i,:),'Color',Color(i,:),'Linewidth',2);
 end
+for i = 1:NumberofBoundaries
+    subplot(1,2,2);
+    hold on;
+    plot(FlowTable(:,i),'Color',Color(i,:),'Linewidth',2);
+    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1);
+end
+hold on;
+subplot(1,2,1);
 xlabel('Time(s)');
 ylabel('Mass flowrate (kg/s)');
-legend([FolderNameList]);
 title('Output Data')
+subplot(1,2,2);
+title('Comparison To Original Data');
 
 %% Adding randomness for Moji's code (takes the ground truth to be the generated boundary conditions, and overlays a simulated 4DPCMR error)
 
