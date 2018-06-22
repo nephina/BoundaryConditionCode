@@ -87,6 +87,8 @@ sumOutlet = sum(OutletList,2);
 sumInlet = sum(InletList,2);
 InletMask = repmat(InOutSwitch',1,NumImagesPerCardiacCycle)';
 OutletMask = 1 - InletMask;
+FlipMask = ((-(1-InOutSwitch))); 
+FlipMask(FlipMask == 0) = 1;
 
 global deltaT;
 global x;
@@ -100,23 +102,24 @@ x = 0:TimeStepOfFinalData:y(end);
 %% Plot the raw data and the averaged data of each boundary in order to make an informed choice on whether the data is good
 
 RawDataDisplayTable = cat(3,BoundariesFlowData,permute(ConvertedFlowData,[1,3,2]));
+RawDataDisplayTable = RawDataDisplayTable.*FlipMask;
 plotbounds = [0 NumImagesPerCardiacCycle min(RawDataDisplayTable(:)) max(RawDataDisplayTable(:))]; % Scale each plot the same to get an accurate picture of how they compare
 numofsubplots = (ceil(NumberofBoundaries/3)*3)+3; % Automatically figures out how many subplots are needed in a 2*n form to display all the boundaries without wasting space
 subplotsydim = numofsubplots/3;
 
-
+f = figure;
 for i = 1:NumberofBoundaries
     hold on
     Color(i,:) = [((1/NumberofBoundaries)*i) (-((1/NumberofBoundaries)*i)+1) rand(1)]; % Trying to get a good differentiable spread of colors
     subplot(subplotsydim,3,i);
     for j = 1:NumberofPlanes
         hold on;
-        plot(RawDataDisplayTable(:,i,(j+1)),'Color',Color(i,:),'Linewidth',1)
+        plot(RawDataDisplayTable(:,i,(j+1)),'Color',Color(i,:),'--')
         axis(plotbounds);
         xlabel('Time(s)');
         ylabel('Mass flowrate (kg/s)');
     end
-    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',2)
+    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1)
     title(BoundaryNameList(i));
     subplot(subplotsydim,3,[numofsubplots-2 numofsubplots-1 numofsubplots]);
     plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1)
@@ -125,7 +128,10 @@ for i = 1:NumberofBoundaries
     xlabel('Time(s)');
     ylabel('Mass flowrate (kg/s)');
 end
-Method = menu('What method to use?','Outlets/Inlets Proportionized Based on Most Reliable Flow','Proportionally Assigned Difference','quit');
+pause(1);
+uiwait(gcf);
+
+Method = menu('What method to use?','Proportionized Using Reliable Flow','Proportionally Assigned Difference','quit');
 close all;
 flowside = 0;
 switch Method
@@ -179,16 +185,19 @@ switch Method
 end
 
 %% Plotting
+
+% Plot Output Data(all cycles)
 for i = 1:NumberofBoundaries
     subplot(1,2,1);
     hold on;
-    plot(x, BoundBCI(i,:),'Color',Color(i,:),'Linewidth',2);
+    plot(x, BoundBCI(i,:),'Color',Color(i,:),'Linewidth',1);
 end
+% Plot single cycle, original data and recalculated data
 for i = 1:NumberofBoundaries
     subplot(1,2,2);
     hold on;
-    plot(FlowTable(:,i),'Color',Color(i,:),'Linewidth',2);
-    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1);
+    plot(FlipMask(i).*FlowTable(:,i),'Color',Color(i,:),'Linewidth',1);
+    plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'--');
 end
 hold on;
 subplot(1,2,1);
@@ -200,8 +209,8 @@ title('Comparison To Original Data');
 
 %% Adding randomness for Moji's code (takes the ground truth to be the generated boundary conditions, and overlays a simulated 4DPCMR error)
 
-Randomness = menu('Add randomness to the boundary conditions?','yes','no');
-if Randomness == 1
+Randomness = menu('Add randomness to the boundary conditions?','no','yes');
+if Randomness == 2
     BoundBCI = Randomizer(BoundariesFlowData,Method,flowside,InletMask,OutletMask,NumImagesPerCardiacCycle,NumberofHeartCycles,NumberofBoundaries,x,y,FolderNameList,InOutSwitch);
 end
 
