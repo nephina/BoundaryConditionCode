@@ -112,24 +112,30 @@ for i = 1:NumberofBoundaries
     hold on
     Color(i,:) = [((1/NumberofBoundaries)*i) (-((1/NumberofBoundaries)*i)+1) rand(1)]; % Trying to get a good differentiable spread of colors
     subplot(subplotsydim,3,i);
+    % Display original .csv data
     for j = 1:NumberofPlanes
         hold on;
         plot(RawDataDisplayTable(:,i,(j+1)),'Color',Color(i,:),'--')
         axis(plotbounds);
-        xlabel('Time(s)');
+        xlabel('Time in Heart Cycle');
         ylabel('Mass flowrate (kg/s)');
     end
+    % Display mean of each boundary's .csv files
     plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1)
     title(BoundaryNameList(i));
+    % Display means of .csv files as one cohesive plot
     subplot(subplotsydim,3,[numofsubplots-2 numofsubplots-1 numofsubplots]);
     plot(RawDataDisplayTable(:,i,1),'Color',Color(i,:),'Linewidth',1)
     axis(plotbounds);
-    title('AveragedBoundaries')
-    xlabel('Time(s)');
+    title('Mean Boundaries')
+    xlabel('Time in Heart Cycle');
     ylabel('Mass flowrate (kg/s)');
 end
+% Function to let user adjust the plot before having to choose a method, I don't know why the pause(1) is needed but it makes it work in octave...
 pause(1);
 uiwait(gcf);
+
+%% Adjustment methods for constant volume, equal inflow/outflow condition
 
 Method = menu('What method to use?','Proportionized Using Reliable Flow','Proportionally Assigned Difference','quit');
 close all;
@@ -203,9 +209,14 @@ hold on;
 subplot(1,2,1);
 xlabel('Time(s)');
 ylabel('Mass flowrate (kg/s)');
-title('Output Data')
+title('Output Data');
 subplot(1,2,2);
+xlabel('Time in Heart Cycle');
+ylabel('Mass flowrate (kg/s)');
 title('Comparison To Original Data');
+
+pause(1);
+uiwait(gcf);
 
 %% Adding randomness for Moji's code (takes the ground truth to be the generated boundary conditions, and overlays a simulated 4DPCMR error)
 
