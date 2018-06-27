@@ -250,7 +250,7 @@ switch app
             end
             fprintf(fileID, ' )\n (flowRate \n');
             for j=1:length(x)
-                fprintf(fileID, '\t %d \n', BoundBCI(j));
+                fprintf(fileID, '\t %d \n', BoundBCI(i,j));
             end
             fprintf(fileID, ' )\n)\n');
             fclose(fileID);
